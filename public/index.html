@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="学芽" />
+  <meta name="theme-color" content="#66BB6A" />
+  <meta name="description" content="二年级小学生每日课外自主学习工作台" />
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.svg" />
+  <title>学芽 — 二年级自主学习工作台</title>
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+  <style>
+    .q-figure svg { max-width: 100%; height: auto; }
+    .q-figure { display: flex; justify-content: center; align-items: center; }
+    @media (min-width: 768px) { #app { max-width: 800px; margin: 0 auto; } }
+    body { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+    .tab-bar { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="tabBar" class="tab-bar"></div>
+
+  <script>
+    // 动态加载JS（按依赖顺序）
+    var _jsFiles = [
+      'js/config.js',
+      'js/api.js',
+      'js/date-utils.js',
+      'js/storage.js',
+      'js/ai-sim.js',
+      'js/error-book.js',
+      'js/tasks.js',
+      'js/plant.js',
+      'js/pages.js',
+      'js/app.js'
+    ];
+    (function() {
+      function loadScript(src, onLoad) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.onload = onLoad;
+        s.onerror = function() { console.error('加载失败:', src); };
+        document.head.appendChild(s);
+      }
+      var i = 0;
+      function next() {
+        if (i >= _jsFiles.length) return;
+        loadScript(_jsFiles[i], function() { i++; next(); });
+      }
+      next();
+    })();
+
+    // 注册 Service Worker (PWA离线缓存)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').catch(function(e) {
+          console.warn('SW注册失败:', e);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
