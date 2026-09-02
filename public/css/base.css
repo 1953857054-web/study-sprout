@@ -1,0 +1,87 @@
+/**
+ * ============================================================
+ *  学芽 App — 基础样式 (reset + 排版 + 工具类)
+ * ============================================================ */
+
+/* Reset */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, sans-serif;
+  font-size: var(--fs-base);
+  line-height: 1.75;
+  color: var(--c-text);
+  background: var(--c-bg);
+  background-image: radial-gradient(circle at 20% 15%, rgba(255,183,77,0.06), transparent 60%),
+                     radial-gradient(circle at 80% 85%, rgba(102,187,106,0.05), transparent 60%);
+  min-height: 100vh;
+  overflow-x: hidden;
+  /* 底部Tab留出空间 */
+  padding-bottom: 76px;
+}
+
+/* 排版 */
+h1, h2, h3, h4 { font-weight: 700; line-height: 1.4; color: var(--c-text); }
+h1 { font-size: var(--fs-xl); }
+h2 { font-size: var(--fs-lg); }
+h3 { font-size: var(--fs-md); }
+p { margin-bottom: var(--sp-sm); }
+a { color: var(--c-primary); text-decoration: none; }
+
+/* 工具类 */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.text-muted { color: var(--c-text-muted); }
+.text-light { color: var(--c-text-light); }
+.text-danger { color: var(--c-danger); }
+.text-success { color: var(--c-primary); }
+.font-bold { font-weight: 700; }
+.font-sm { font-size: var(--fs-sm); }
+.font-lg { font-size: var(--fs-lg); }
+.font-xl { font-size: var(--fs-xl); }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.flex-wrap { flex-wrap: wrap; }
+.gap-sm { gap: var(--sp-sm); }
+.gap-md { gap: var(--sp-md); }
+.gap-lg { gap: var(--sp-lg); }
+
+.full-width { width: 100%; }
+.rounded { border-radius: var(--radius-lg); }
+.shadow { box-shadow: var(--shadow-md); }
+
+.mt-sm { margin-top: var(--sp-sm); }
+.mt-md { margin-top: var(--sp-md); }
+.mt-lg { margin-top: var(--sp-lg); }
+.mb-sm { margin-bottom: var(--sp-sm); }
+.mb-md { margin-bottom: var(--sp-md); }
+.mb-lg { margin-bottom: var(--sp-lg); }
+
+.hidden { display: none !important; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: var(--radius-full); }
+
+/* 动画 */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+@keyframes grow { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes rainDrop { 0% { transform: translateY(-20px); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(0); opacity: 0; } }
+
+.fade-in { animation: fadeIn 0.4s ease; }
+.pop-in { animation: popIn 0.3s ease; }
+.bounce { animation: bounce 1.5s ease infinite; }
