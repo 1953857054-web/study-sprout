@@ -12,7 +12,8 @@
  */
 var API = (function () {
 
-  var CONFIG_VERSION = 4;
+  var CONFIG_VERSION = 5;
+  var API_BASE = 'https://study-sprout-api.1953857054.workers.dev';
 
   /* 默认配置 — 无密钥，仅选择provider */
   var DEFAULTS = {
@@ -71,7 +72,7 @@ var API = (function () {
     var now = Date.now();
     if (_baiduToken && now < _baiduTokenExpiry) return _baiduToken;
 
-    var resp = await fetch('/api/baidu-token', { method: 'GET' });
+    var resp = await fetch(API_BASE + '/api/baidu-token', { method: 'GET' });
     var data = await resp.json();
     if (data.access_token) {
       _baiduToken = data.access_token;
@@ -88,7 +89,7 @@ var API = (function () {
     if (cfg.ocr.provider === 'baidu') {
       var token = await getBaiduToken();
       var body = 'image=' + encodeURIComponent(imageBase64) + '&language_type=CHN_ENG';
-      var resp = await fetch('/api/baidu-ocr?access_token=' + token, {
+      var resp = await fetch(API_BASE + '/api/baidu-ocr?access_token=' + token, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: body
@@ -120,7 +121,7 @@ var API = (function () {
     var userPrompt = '学科：' + subjectName + '\n课题：' + lessonTitle + '\n年级：二年级\n' +
       '---学生作业OCR识别内容---\n' + ocrText + '\n---结束---\n请批改以上作业内容。';
 
-    var resp = await fetch('/api/ai-chat', {
+    var resp = await fetch(API_BASE + '/api/ai-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
