@@ -1,0 +1,79 @@
+/**
+ * ============================================================
+ *  学芽 App — CSS 变量定义（马卡龙配色）
+ *  所有颜色、尺寸、间距集中管理
+ * ============================================================
+ */
+:root {
+  /* 主色调 */
+  --c-primary:        #66BB6A;
+  --c-primary-light:  #A5D6A7;
+  --c-primary-dark:   #43A047;
+
+  /* 辅色 */
+  --c-secondary:      #FFA726;
+  --c-secondary-light: #FFCC80;
+  --c-secondary-dark: #F57C00;
+
+  /* 学科色 */
+  --c-chinese:        #F48FB1;
+  --c-chinese-light:  #FCE4EC;
+  --c-math:           #64B5F6;
+  --c-math-light:     #E3F2FD;
+
+  /* 状态色 */
+  --c-danger:         #EF5350;
+  --c-danger-light:   #FFCDD2;
+  --c-warning:        #FFB74D;
+  --c-success:        #66BB6A;
+  --c-info:           #4DD0E1;
+
+  /* 背景 */
+  --c-bg:             #FFFDE7;
+  --c-bg-secondary:   #FFF8E1;
+  --c-card:           #FFFFFF;
+  --c-overlay:        rgba(0, 0, 0, 0.3);
+
+  /* 文字 */
+  --c-text:           #4E342E;
+  --c-text-light:     #8D6E63;
+  --c-text-white:    #FFFFFF;
+  --c-text-muted:     #BCAAA4;
+
+  /* 边框 */
+  --c-border:         #FFE082;
+  --c-border-light:   #FFF3E0;
+
+  /* 阴影 */
+  --shadow-sm:        0 2px 8px rgba(255, 193, 7, 0.10);
+  --shadow-md:        0 4px 16px rgba(255, 193, 7, 0.12);
+  --shadow-lg:        0 8px 32px rgba(255, 193, 7, 0.15);
+
+  /* 圆角 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+
+  /* 字号 */
+  --fs-xs:   12px;
+  --fs-sm:   14px;
+  --fs-base: 16px;
+  --fs-md:   18px;
+  --fs-lg:   22px;
+  --fs-xl:   28px;
+  --fs-2xl:  36px;
+
+  /* 间距 */
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 32px;
+
+  /* 按钮最小尺寸（适合儿童手指） */
+  --btn-min-height: 52px;
+  --btn-min-width:  120px;
+  --tap-min-size:   48px;
+}
