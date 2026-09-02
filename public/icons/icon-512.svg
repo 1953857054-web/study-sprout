@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#FFFDE7"/>
+  <circle cx="256" cy="256" r="210" fill="#66BB6A"/>
+  <text x="256" y="316" font-size="170" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="bold">学</text>
+  <path d="M256 148 Q256 92 204 92 Q152 92 152 148 Q152 176 178 188 L256 214 L334 188 Q360 176 360 148 Q360 92 308 92 Q256 92 256 148 Z" fill="#FFCC80"/>
+  <circle cx="204" cy="126" r="8" fill="#F57C00"/>
+  <circle cx="308" cy="126" r="8" fill="#F57C00"/>
+  <path d="M256 214 L256 400" stroke="#8D6E63" stroke-width="11" fill="none"/>
+  <ellipse cx="188" cy="320" rx="48" ry="26" fill="#81C784" transform="rotate(-25 188 320)"/>
+  <ellipse cx="324" cy="320" rx="48" ry="26" fill="#81C784" transform="rotate(25 324 320)"/>
+</svg>
