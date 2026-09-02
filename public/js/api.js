@@ -111,20 +111,31 @@ var API = (function () {
     var subjectName = subject === 'chinese' ? '语文' : '数学';
     var lessonTitle = lessonInfo ? lessonInfo.title : '当前课';
 
-    var systemPrompt = '你是一位经验丰富的小学二年级老师，正在批改学生的作业。' +
-      '请仔细阅读学生作业内容，逐题判断对错，给出批改结果和鼓励性讲解。' +
-      '要求：1.逐题列出对错 2.错误的题目用儿童化语言讲解 3.列出已掌握和未掌握的知识点 4.给予鼓励。' +
-      '请用JSON格式返回：{"results":[{"correct":true/false,"question":"题目","studentAnswer":"学生答案",' +
-      '"correctAnswer":"正确答案","explanation":"讲解"}],"masteredPoints":["已掌握知识点"],' +
-      '"weakPoints":["薄弱知识点"],"summary":"总评","correctCount":对题数,"wrongCount":错题数}';
+    var systemPrompt = '你是一位经验丰富、温和耐心的小学二年级老师，正在批改学生手写作业。' +
+      'OCR识别的手写文字可能有误差，请你根据上下文智能推断学生的真实答题内容。\\n\\n' +
+      '批改要求：\\n' +
+      '1. 逐题分离：将OCR文本按行/题号拆分为独立题目，识别每题的题目要求和学生作答内容\\n' +
+      '2. 判断对错：根据二年级知识点判断每题答案是否正确，计算题验证计算结果，语文题验证字词拼写\\n' +
+      '3. 容错处理：如果OCR识别有误但能推断出学生本意，按推断结果批改并在explanation中说明\\n' +
+      '4. 讲解：错误的题目用简单、儿童化语言讲解，不要超过2句话\\n' +
+      '5. 知识点：根据题目内容归纳已掌握和未掌握的知识点\\n' +
+      '6. 鼓励：总评以鼓励为主，先表扬再建议\\n\\n' +
+      '请严格用JSON格式返回，不要加markdown代码块：\\n' +
+      '{"results":[{"correct":true,"question":"题目内容","studentAnswer":"学生答案","correctAnswer":"正确答案","explanation":"讲解(仅错题需要)"}],' +
+      '"masteredPoints":["已掌握知识点"],"weakPoints":["薄弱知识点"],' +
+      '"summary":"鼓励性总评","correctCount":正确题数,"wrongCount":错误题数}';
 
-    var userPrompt = '学科：' + subjectName + '\n课题：' + lessonTitle + '\n年级：二年级\n' +
-      '---学生作业OCR识别内容---\n' + ocrText + '\n---结束---\n请批改以上作业内容。';
+    var userPrompt = '学科：' + subjectName + '\\n课题：' + lessonTitle + '\\n年级：小学二年级\\n' +
+      '教材版本：' + (subject === 'chinese' ? '人教统编版' : '青岛版') + '\\n' +
+      '---学生作业OCR识别原文（可能有识别误差）---\\n' + ocrText + '\\n---OCR原文结束---\\n\\n' +
+      '请你：1.先按行或题号拆分题目 2.推断每题的题目和学生答案 3.逐题批改 4.返回JSON';
 
     var resp = await fetch(API_BASE + '/api/ai-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        model: 'doubao-seed-2-1-turbo-260628',
+        temperature: 0.3,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
