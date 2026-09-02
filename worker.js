@@ -67,7 +67,7 @@ async function handleBaiduOcr(request, env, corsHeaders) {
     });
   }
   const body = await request.text();
-  const ocrUrl = `https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token=${accessToken}`;
+  const ocrUrl = `https://aip.baidubce.com/rest/2.0/ocr/v1/handwriting?access_token=${accessToken}`;
   const resp = await fetch(ocrUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
