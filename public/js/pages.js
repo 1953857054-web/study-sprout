@@ -12,7 +12,8 @@ var Pages = (function () {
     studySubject: 'chinese',
     studyMode: 'online',
     answers: {},
-    errorFilter: 'all'
+    errorFilter: 'all',
+    photoList: []
   };
 
   /* ========================================================
@@ -262,20 +263,30 @@ var Pages = (function () {
     return html;
   }
 
-  /** 线下拍照上传渲染 */
+  /** 线下拍照上传渲染（支持多张） */
   function renderOfflineUpload(subTask, subject) {
     var html = '<div class="card">' +
-      '<p style="font-size:14px;margin-bottom:12px;">请完成纸质练习后，拍照上传：</p>' +
+      '<p style="font-size:14px;margin-bottom:12px;">请完成纸质练习后，拍照上传（可拍多页）：</p>' +
+      '<div id="photoPreviewList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">';
+
+    state.photoList.forEach(function(src, i) {
+      html += '<div style="position:relative;width:80px;height:80px;">' +
+        '<img src="' + src + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid var(--c-border);" />' +
+        '<div onclick="Pages.removePhoto(' + i + ')" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:#ff5252;color:#fff;border-radius:50%;text-align:center;line-height:20px;font-size:12px;cursor:pointer;">×</div>' +
+      '</div>';
+    });
+
+    html += '</div>' +
       '<div class="upload-area" id="uploadArea">' +
         '<div class="upload-icon">📷</div>' +
-        '<div class="upload-text">点击拍照或选择图片</div>' +
+        '<div class="upload-text">' + (state.photoList.length > 0 ? '继续添加照片' : '点击拍照或选择图片') + '</div>' +
         '<div style="font-size:11px;color:var(--c-text-muted);margin-top:8px;">' + AI.OCR_NOTICE + '</div>' +
       '</div>' +
-      '<img id="uploadPreview" class="upload-preview hidden" />' +
       '<input type="file" accept="image/*" capture="environment" id="fileInput" style="display:none" />' +
     '</div>';
 
-    html += '<button class="btn btn-secondary btn-lg" onclick="Pages.submitOffline()">上传并批改 ✨</button>';
+    var canSubmit = state.photoList.length > 0;
+    html += '<button class="btn btn-secondary btn-lg' + (canSubmit ? '' : ' disabled') + '" onclick="Pages.submitOffline()" ' + (canSubmit ? '' : 'disabled') + '>上传并批改 ✨' + (state.photoList.length > 0 ? '（' + state.photoList.length + '张）' : '') + '</button>';
 
     html += '<div class="callout" style="background:linear-gradient(135deg,rgba(116,185,255,0.08),rgba(116,185,255,0.03));border-left:4px solid var(--c-math);padding:12px 16px;border-radius:0 12px 12px 0;">' +
       '<p style="font-size:13px;">🧠 <strong>智能去重</strong>：纸质学习批改后，系统会自动识别已掌握的知识点，从后续线上练习中剔除，不浪费时间！</p></div>';
@@ -285,11 +296,18 @@ var Pages = (function () {
 
   /** 批改结果渲染 */
   function renderStudyResult(subTask, cfg) {
+    var isOffline = subTask.mode === 'offline';
+    var waterTotal = CONFIG.WATER_PER_SUBJECT;
+    if (subTask.wrongCount > 0) {
+      waterTotal = CONFIG.WATER_PER_SUBJECT + Math.floor(CONFIG.WATER_BONUS_RATIO_POOL * subTask.correctCount / (subTask.correctCount + subTask.wrongCount));
+    }
+
     var html = '<div class="card text-center card-success">' +
       '<div style="font-size:48px;margin-bottom:8px;">' + (subTask.allCorrect ? '🎉' : '👍') + '</div>' +
       '<h3>' + (subTask.allCorrect ? '全部答对！太棒了！' : '完成了！继续加油！') + '</h3>' +
       '<p style="color:var(--c-text-light);">正确 ' + subTask.correctCount + ' 题，错误 ' + subTask.wrongCount + ' 题</p>' +
-      '<p style="color:var(--c-primary);font-weight:700;">💧 +5 水滴' + (subTask.allCorrect ? ' +2 全对奖励' : '') + '</p>' +
+      '<p style="color:var(--c-primary);font-weight:700;">💧 +' + waterTotal + ' 水滴' +
+        (subTask.wrongCount > 0 ? '（含错题比例奖励）' : '') + '</p>' +
     '</div>';
 
     // 显示新掌握的知识点
@@ -300,7 +318,7 @@ var Pages = (function () {
     }
 
     // 拍照批改：显示OCR识别结果和AI讲解
-    if (subTask.mode === 'offline') {
+    if (isOffline) {
       if (subTask.ocrText && !subTask.ocrText.startsWith('(')) {
         html += '<div class="card">' +
           '<h4>📝 OCR识别结果</h4>' +
@@ -319,35 +337,65 @@ var Pages = (function () {
       }
     }
 
-    // 错题讲解
-    if (subTask.wrongList && subTask.wrongList.length > 0) {
-      html += '<h3 style="margin-top:20px;">📖 AI错题讲解</h3>';
-      subTask.wrongList.forEach(function(w, i) {
-        html += '<div class="result-card wrong-item">' +
-          '<div class="r-status">❌ 第' + (i+1) + '题 · ' + esc(w.knowledgePoint) + '</div>' +
-          '<div class="r-q">' + esc(w.question.question) + '</div>' +
-          (w.question.figure ? '<div class="q-figure" style="text-align:center;margin:12px 0;padding:16px;background:#fff8f0;border-radius:12px;border:2px dashed #ffe0b2;">' + w.question.figure + '</div>' : '') +
-          '<div class="r-answer">你的答案：' + esc(w.studentAnswer) + ' | 正确答案：' + esc(w.correctAnswer) + '</div>' +
-          '<div class="ai-bubble" style="margin-top:8px;"><div class="ai-text">' + esc(w.explanation) + '</div></div>' +
-        '</div>';
-      });
-    }
+    // 拍照模式：从AI批改结果渲染（不再显示线上练习题）
+    if (isOffline && subTask.aiResults && subTask.aiResults.length > 0) {
+      var wrongItems = subTask.aiResults.filter(function(r) { return !r.correct; });
+      var correctItems = subTask.aiResults.filter(function(r) { return r.correct; });
 
-    // 正确题目展示
-    var correctList = [];
-    subTask.questions.forEach(function(q, i) {
-      var w = subTask.wrongList.find(function(x) { return x.question === q; });
-      if (!w) correctList.push({ q: q, idx: i });
-    });
-    if (correctList.length > 0) {
-      html += '<h3 style="margin-top:20px;">✅ 答对的题目</h3>';
-      correctList.forEach(function(c) {
-        html += '<div class="result-card correct-item">' +
-          '<div class="r-status">✓ 第' + (c.idx+1) + '题</div>' +
-          '<div class="r-q">' + esc(c.q.question) + '</div>' +
-          (c.q.figure ? '<div class="q-figure" style="text-align:center;margin:8px 0;padding:12px;background:#f0fff4;border-radius:8px;border:2px dashed #c8e6c9;">' + c.q.figure + '</div>' : '') +
-        '</div>';
-      });
+      if (wrongItems.length > 0) {
+        html += '<h3 style="margin-top:20px;">📖 AI错题讲解</h3>';
+        wrongItems.forEach(function(w, i) {
+          html += '<div class="result-card wrong-item">' +
+            '<div class="r-status">❌ 第' + (i+1) + '题' + (w.knowledgePoint ? ' · ' + esc(w.knowledgePoint) : '') + '</div>' +
+            '<div class="r-q">' + esc(w.question || w.question_text || '') + '</div>' +
+            '<div class="r-answer">你的答案：' + esc(w.studentAnswer || '') + ' | 正确答案：' + esc(w.correctAnswer || '') + '</div>' +
+            (w.explanation ? '<div class="ai-bubble" style="margin-top:8px;"><div class="ai-text">' + esc(w.explanation) + '</div></div>' : '') +
+          '</div>';
+        });
+      }
+
+      if (correctItems.length > 0) {
+        html += '<h3 style="margin-top:20px;">✅ 答对的题目</h3>';
+        correctItems.forEach(function(c, i) {
+          html += '<div class="result-card correct-item">' +
+            '<div class="r-status">✓ 第' + (i+1) + '题</div>' +
+            '<div class="r-q">' + esc(c.question || c.question_text || '') + '</div>' +
+            '<div class="r-answer">答案：' + esc(c.studentAnswer || '') + '</div>' +
+          '</div>';
+        });
+      }
+    } else {
+      // 线上练习模式：从题目列表渲染
+      if (subTask.wrongList && subTask.wrongList.length > 0) {
+        html += '<h3 style="margin-top:20px;">📖 AI错题讲解</h3>';
+        subTask.wrongList.forEach(function(w, i) {
+          html += '<div class="result-card wrong-item">' +
+            '<div class="r-status">❌ 第' + (i+1) + '题 · ' + esc(w.knowledgePoint) + '</div>' +
+            '<div class="r-q">' + esc(w.question.question) + '</div>' +
+            (w.question.figure ? '<div class="q-figure" style="text-align:center;margin:12px 0;padding:16px;background:#fff8f0;border-radius:12px;border:2px dashed #ffe0b2;">' + w.question.figure + '</div>' : '') +
+            '<div class="r-answer">你的答案：' + esc(w.studentAnswer) + ' | 正确答案：' + esc(w.correctAnswer) + '</div>' +
+            '<div class="ai-bubble" style="margin-top:8px;"><div class="ai-text">' + esc(w.explanation) + '</div></div>' +
+          '</div>';
+        });
+      }
+
+      var correctList = [];
+      if (subTask.questions) {
+        subTask.questions.forEach(function(q, i) {
+          var w = subTask.wrongList.find(function(x) { return x.question === q; });
+          if (!w) correctList.push({ q: q, idx: i });
+        });
+      }
+      if (correctList.length > 0) {
+        html += '<h3 style="margin-top:20px;">✅ 答对的题目</h3>';
+        correctList.forEach(function(c) {
+          html += '<div class="result-card correct-item">' +
+            '<div class="r-status">✓ 第' + (c.idx+1) + '题</div>' +
+            '<div class="r-q">' + esc(c.q.question) + '</div>' +
+            (c.q.figure ? '<div class="q-figure" style="text-align:center;margin:8px 0;padding:12px;background:#f0fff4;border-radius:8px;border:2px dashed #c8e6c9;">' + c.q.figure + '</div>' : '') +
+          '</div>';
+        });
+      }
     }
 
     html += '<button class="btn btn-outline btn-lg" style="margin-top:16px;" onclick="Pages.go(\'home\')">返回首页</button>';
@@ -359,7 +407,6 @@ var Pages = (function () {
     if (state.studyMode === 'offline') {
       var uploadArea = document.getElementById('uploadArea');
       var fileInput = document.getElementById('fileInput');
-      var preview = document.getElementById('uploadPreview');
       if (uploadArea && fileInput) {
         uploadArea.addEventListener('click', function() { fileInput.click(); });
         fileInput.addEventListener('change', function(e) {
@@ -367,9 +414,8 @@ var Pages = (function () {
           if (file) {
             var reader = new FileReader();
             reader.onload = function(ev) {
-              preview.src = ev.target.result;
-              preview.classList.remove('hidden');
-              state.photoData = ev.target.result;
+              state.photoList.push(ev.target.result);
+              render();
             };
             reader.readAsDataURL(file);
           }
@@ -721,8 +767,9 @@ var Pages = (function () {
    *  事件处理方法（通过onclick内联调用）
    * ====================================================== */
 
-  function setSubject(s) { state.studySubject = s; state.answers = {}; render(); }
-  function setMode(m) { state.studyMode = m; state.answers = {}; render(); }
+  function setSubject(s) { state.studySubject = s; state.answers = {}; state.photoList = []; render(); }
+  function setMode(m) { state.studyMode = m; state.answers = {}; state.photoList = []; render(); }
+  function removePhoto(i) { state.photoList.splice(i, 1); render(); }
 
   function selectAnswer(qIdx, val) {
     state.answers[qIdx] = val;
@@ -754,16 +801,18 @@ var Pages = (function () {
 
   async function submitOffline() {
     var subject = state.studySubject;
-    var photoData = state.photoData || 'demo_photo';
-    // 显示加载状态
-    toast('正在批改中，请稍候...⏳', 'info');
+    if (state.photoList.length === 0) {
+      toast('请先拍照或选择图片！📷', 'warning');
+      return;
+    }
+    toast('正在批改' + state.photoList.length + '张照片，请稍候...⏳', 'info');
     try {
-      var result = await Tasks.submitOfflineTaskAsync(subject, photoData);
+      var result = await Tasks.submitOfflineTaskAsync(subject, state.photoList);
       if (result) {
         var msg = '拍照批改完成！获得' + result.waterEarned + '滴水！🎉';
         if (result.result && result.result.summary) msg += '\n' + result.result.summary;
         toast(msg, 'success');
-        state.photoData = null;
+        state.photoList = [];
         state.showOfflineResult = true;
         state.offlineResult = result;
         render();
