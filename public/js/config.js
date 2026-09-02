@@ -6,9 +6,11 @@
  */
 var CONFIG = {
 
-  /* ===== 水滴积分规则（严格按需求，不可改）===== */
-  WATER_PER_SUBJECT: 5,           // 完成1科任务奖励5滴
-  WATER_BONUS_ALL_CORRECT: 2,     // 单科全对额外奖励2滴
+  /* ===== 水滴积分规则 ===== */
+  WATER_PER_SUBJECT: 5,           // 完成1科任务基础奖励5滴
+  WATER_BONUS_RATIO_POOL: 5,      // 有错题时按正确比例额外奖励（向下取整）
+  // 全对：仅基础5滴，无额外奖励
+  // 有错题：5 + floor(5 * correctCount / totalCount)
   WATER_WEEKLY_REVIEW: 3,        // 周末复习完成奖励3滴
   WATER_UNIT_TEST_PASS: 10,     // 一课一测达标(≥80分)奖励10滴
 
