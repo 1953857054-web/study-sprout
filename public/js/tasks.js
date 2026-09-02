@@ -485,12 +485,22 @@ var Tasks = (function () {
     var cLesson = getCurrentLesson('chinese');
     var mLesson = getCurrentLesson('math');
 
-    // 语文：基础3题 + 阅读3题 + 写话2题 = 8题
+    // 语文：按当前课过滤习题（不选其他课的内容）
     var cUnit = getUnitData('chinese', cLesson.unit);
+    var cOtherLessons = (cUnit.lessons || []).filter(function(t) { return t !== cLesson.title; });
+    function filterByLesson(pool) {
+      if (!pool) return [];
+      return pool.filter(function(q) {
+        for (var i = 0; i < cOtherLessons.length; i++) {
+          if (q.question.indexOf(cOtherLessons[i]) >= 0) return false;
+        }
+        return true;
+      });
+    }
     var cQuestions = [];
-    cQuestions = cQuestions.concat(pickQuestions(cUnit.basic || [], 3, 'chinese', cLesson.unit));
-    cQuestions = cQuestions.concat(pickQuestions(cUnit.reading || [], 3, 'chinese', cLesson.unit));
-    cQuestions = cQuestions.concat(pickQuestions(cUnit.writing || [], 2, 'chinese', cLesson.unit));
+    cQuestions = cQuestions.concat(pickQuestions(filterByLesson(cUnit.basic), 3, 'chinese', cLesson.unit));
+    cQuestions = cQuestions.concat(pickQuestions(filterByLesson(cUnit.reading), 3, 'chinese', cLesson.unit));
+    cQuestions = cQuestions.concat(pickQuestions(filterByLesson(cUnit.writing), 2, 'chinese', cLesson.unit));
     cQuestions.forEach(function(q) {
       if (!q.category) { q.category = 'basic'; q.categoryName = '课本基础'; q.categoryIcon = '📚'; }
     });
@@ -520,6 +530,19 @@ var Tasks = (function () {
   }
 
   /* ========================================================
+   *  水滴奖励计算（错题比例机制）
+   *  全对：基础5滴，无额外
+   *  有错题：5 + floor(5 * correctCount / totalCount)
+   * ====================================================== */
+  function calcWaterReward(correctCount, wrongCount) {
+    var base = CONFIG.WATER_PER_SUBJECT;
+    var total = correctCount + wrongCount;
+    if (wrongCount === 0 || total === 0) return base;
+    var bonus = Math.floor(CONFIG.WATER_BONUS_RATIO_POOL * correctCount / total);
+    return base + bonus;
+  }
+
+  /* ========================================================
    *  提交练习
    * ====================================================== */
   function submitOnlineTask(subject, answers) {
@@ -539,8 +562,7 @@ var Tasks = (function () {
         studentAnswer:String(w.studentAnswer), correctAnswer:String(w.correctAnswer),
         knowledgePoint:w.knowledgePoint, explanation:w.explanation, reviewStatus:'pending' });
     });
-    var water = CONFIG.WATER_PER_SUBJECT;
-    if (result.allCorrect) water += CONFIG.WATER_BONUS_ALL_CORRECT;
+    var water = calcWaterReward(result.correctCount, result.wrongCount);
     Storage.addWater(water, (subject === 'chinese' ? '语文' : '数学') + '任务完成');
     if (subject === 'math') checkAndRestoreHP(task);
     Storage.setTask(today, task);
@@ -578,38 +600,60 @@ var Tasks = (function () {
   /**
    * 异步拍照提交 — 优先使用真实OCR+AI接口，未配置时降级为模拟
    */
-  async function submitOfflineTaskAsync(subject, photoDataUrl) {
+  async function submitOfflineTaskAsync(subject, photoDataUrls) {
     var today = DateUtils.today();
     var task = Storage.getTask(today);
     if (!task || !task[subject]) return null;
     var subTask = task[subject];
     var lesson = getCurrentLesson(subject);
 
-    // 提取base64（去掉data:image前缀）
-    var imageBase64 = photoDataUrl;
-    if (imageBase64 && imageBase64.indexOf(',') > -1) {
-      imageBase64 = imageBase64.split(',')[1];
-    }
+    // 支持多张照片（数组或单个URL）
+    var photos = Array.isArray(photoDataUrls) ? photoDataUrls : [photoDataUrls];
+    var allOcrText = [];
+    var result;
 
-    // 调用异步批改（真实API或模拟）
-    var result = await AI.gradePhotoAsync(subject, subTask.unit, imageBase64, lesson);
+    for (var pi = 0; pi < photos.length; pi++) {
+      var imageBase64 = photos[pi];
+      if (imageBase64 && imageBase64.indexOf(',') > -1) {
+        imageBase64 = imageBase64.split(',')[1];
+      }
+      var r = await AI.gradePhotoAsync(subject, subTask.unit, imageBase64, lesson);
+      if (pi === 0) {
+        result = r;
+      } else {
+        // 合并多张照片的结果
+        if (r.ocrText) allOcrText.push(r.ocrText);
+        if (r.results) {
+          result.results = (result.results || []).concat(r.results);
+          result.correctCount += r.correctCount || 0;
+          result.wrongCount += r.wrongCount || 0;
+        }
+        if (r.wrongList) result.wrongList = (result.wrongList || []).concat(r.wrongList);
+        if (r.masteredPoints) result.masteredPoints = (result.masteredPoints || []).concat(r.masteredPoints);
+        if (r.weakPoints) result.weakPoints = (result.weakPoints || []).concat(r.weakPoints);
+      }
+      if (pi === 0 && r.ocrText) allOcrText.push(r.ocrText);
+    }
+    if (allOcrText.length > 0) result.ocrText = allOcrText.join('\n---\n');
+    result.allCorrect = result.wrongCount === 0;
 
     subTask.completed = true; subTask.allCorrect = result.allCorrect;
     subTask.correctCount = result.correctCount; subTask.wrongCount = result.wrongCount;
-    subTask.wrongList = result.wrongList; subTask.submittedAt = new Date().toISOString();
-    subTask.mode = 'offline'; subTask.photoData = photoDataUrl;
+    subTask.wrongList = result.wrongList || []; subTask.submittedAt = new Date().toISOString();
+    subTask.mode = 'offline'; subTask.photoData = photos.length > 1 ? photos : photoDataUrls;
     subTask.masteredPoints = result.masteredPoints || [];
     subTask.aiSummary = result.summary || '';
     subTask.ocrText = result.ocrText || '';
     subTask.isSimulated = result.isSimulated !== false;
+    subTask.aiResults = result.results || [];
 
     result.wrongList.forEach(function(w) {
       Storage.addError({ date:today, subject:subject, unit:subTask.unit, source:'daily',
-        question:w.question.question, questionType:'photo',
+        question:w.question || w.question_text || '', questionType:'photo',
         studentAnswer:w.studentAnswer, correctAnswer:w.correctAnswer,
         knowledgePoint:w.knowledgePoint, explanation:w.explanation, reviewStatus:'pending' });
     });
-    var water = CONFIG.WATER_PER_SUBJECT;
+    var water = calcWaterReward(result.correctCount, result.wrongCount);
     Storage.addWater(water, (subject === 'chinese' ? '语文' : '数学') + '任务完成(拍照)');
     if (subject === 'math') checkAndRestoreHP(task);
     Storage.setTask(today, task);
