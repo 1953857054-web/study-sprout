@@ -1,0 +1,11 @@
+{
+  "name": "study-sprout",
+  "version": "1.0.0",
+  "description": "二年级小学生自主学习工作台 - PWA",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {}
+}
